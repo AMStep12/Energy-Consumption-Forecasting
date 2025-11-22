@@ -1,0 +1,12 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+# optional extras you can uncomment locally:
+# statsmodels
+# prophet
+# textblob
+# vaderSentiment
+# streamlit
+
+# statsmodels
