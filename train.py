@@ -1,26 +1,48 @@
-import os, pandas as pd, numpy as np
+import os
+import pandas as pd
+import numpy as np
 from sklearn.metrics import mean_absolute_percentage_error
 import matplotlib.pyplot as plt
 
-DATA = "data/synthetic/energy.csv"
-FIG = "reports/figures"; os.makedirs(FIG, exist_ok=True)
+DATA_PATH = os.path.join("data", "synthetic", "energy.csv")
+FIG_DIR = os.path.join("reports", "figures")
+
+os.makedirs(FIG_DIR, exist_ok=True)
 
 if __name__ == "__main__":
-    df = pd.read_csv(DATA, parse_dates=["date"]).set_index("date").sort_index()
-    split = int(len(df)*0.8)
-    train, test = df.iloc[:split], df.iloc[split:]
-    # naive seasonal forecast (weekly)
+    df = pd.read_csv(DATA_PATH, parse_dates=["date"]).set_index("date").sort_index()
+
+    split_idx = int(len(df) * 0.8)
+    train = df.iloc[:split_idx]
+    test = df.iloc[split_idx:]
+
+    # Naive weekly seasonal forecast
     horizon = len(test)
     seasonal_period = 7
-    naive = train["load"].iloc[-seasonal_period:].tolist() * (horizon//seasonal_period + 1)
-    naive = naive[:horizon]
-    mape = mean_absolute_percentage_error(test["load"], naive)
+
+    history = train["load"].values
+    forecast = []
+
+    for i in range(horizon):
+        idx = len(history) - seasonal_period + i
+        forecast.append(history[idx])
+
+    forecast = np.array(forecast)
+
+    mape = mean_absolute_percentage_error(test["load"].values, forecast)
     print(f"Naive seasonal MAPE: {mape:.3f}")
-    # plot
+
     plt.figure()
-    plt.plot(train.index, train["load"], label="train")
-    plt.plot(test.index, test["load"], label="test")
-    plt.plot(test.index, naive, label="naive_seasonal")
-    plt.legend(); plt.title("Energy Load Forecast (Naive Seasonal)")
-    plt.tight_layout(); plt.savefig(os.path.join(FIG, "forecast.png"))
-    print(f"Saved figure to {os.path.join(FIG,'forecast.png')}")
+    plt.plot(train.index, train["load"], label="Train")
+    plt.plot(test.index, test["load"], label="Test")
+    plt.plot(test.index, forecast, label="Naive seasonal forecast")
+    plt.legend()
+    plt.title("Energy Load Forecast (Naive Seasonal)")
+    plt.xlabel("Date")
+    plt.ylabel("Load")
+    plt.tight_layout()
+
+    out_path = os.path.join(FIG_DIR, "forecast.png")
+    plt.savefig(out_path)
+    print(f"Saved forecast plot to {out_path}")
+
